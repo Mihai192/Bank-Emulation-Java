@@ -732,7 +732,7 @@ public class App {
 				if (comanda == 7)
 					return false;
 
-				if (comanda < 1 || (bankAccounts != null && comanda > bankAccounts.size()))
+				if (comanda < 1 || comanda > 7)
 					throw new InputMismatchException();
 				loop = false;
 
@@ -1185,9 +1185,14 @@ public class App {
 						System.out.printf("Alege persoana pentru transfer(1/%d): ", nr);
 						comanda = scanner.nextInt();
 
-						while (comanda < 0 || comanda > nr) {
+						if (comanda == nr + 1)
+							return;
+
+						while (comanda < 1 || comanda > nr) {
 							System.out.printf("Alege persoana pentru transfer(1/%d): ", nr);
 							comanda = scanner.nextInt();
+							if (comanda == nr + 1)
+								return;
 						}
 
 						User user = UserService.getBeneficiaries(connection, currentUser).get(comanda - 1);
@@ -1202,12 +1207,18 @@ public class App {
 						while (comanda < 0 || comanda > nr) {
 							System.out.printf("Alege contul bancar pentru transfer(1/%d): ", nr);
 							comanda = scanner.nextInt();
+
+							if (comanda == nr + 1)
+								return;
 						}
 
 						BankAccount ba = UserService.getBankAccounts(connection, currentUser).get(0);
 
 						System.out.println("Introdu suma: ");
 						suma = scanner.nextInt();
+
+						if (comanda == nr + 1)
+							return;
 
 						while (suma < 0 || suma > ba.getBalance()) {
 							System.out.println("Introdu suma: ");
@@ -1318,11 +1329,11 @@ public class App {
 
 				// loop = false;
 			} catch (InputMismatchException e) {
-				error = e.getMessage();
+				error = "Input incorrect";
 				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
-				System.out.println(e);
+
 			}
 		}
 
