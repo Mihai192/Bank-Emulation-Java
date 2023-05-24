@@ -74,10 +74,13 @@ public class App {
 					throw new Exception("Ai introdus o valoarea gresita. Trebuie sa introduci un numar intre 1 si 4");
 
 				loop = false;
+			} catch (InputMismatchException e) {
+				error = "Ai introdus o valoare gresita. Trebuie sa introduci un numar intre 1 si 4.";
+				scanner.nextLine();
 			} catch (Exception e) {
 				// System.out.println(e);
 				error = e.getMessage();
-				scanner.nextLine();
+
 			}
 		}
 
@@ -160,16 +163,20 @@ public class App {
 
 				User new_user = new User(name, email, role, pass, cnp, adresa);
 
+				// System.out.println(new_user);
+				// System.out.println("chiar aici ???");
 				if (UserService.existsNameEmail(connection, new_user))
 					throw new Exception("Nume sau email deja folosit.");
 
+				// System.out.println("inainte de eroare");
 				UserService.insert(connection, new_user);
 
+				// System.out.println("aici apare eroarea");
 				// new_user = UserService.select(connection, "email",
 				// new_user.getEmail()).get(0);
 				loop = false;
 			} catch (Exception e) {
-				System.out.println("Sunt aici....?");
+
 				error = e.getMessage();
 			}
 		}
@@ -242,7 +249,12 @@ public class App {
 
 				email = scanner.nextLine();
 
-				User user = UserService.select(connection, "email", email).get(0);
+				User user = null;
+				ArrayList<User> users = UserService.select(connection, "email", email);
+				if (users != null && users.size() > 0)
+					user = users.get(0);
+				else
+					throw new Exception("Nu exista niciun user cu acest email");
 
 				System.out.printf("Introdu noua parola: ");
 				pass = scanner.nextLine();

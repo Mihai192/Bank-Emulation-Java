@@ -79,11 +79,21 @@ public class UserService {
 		final String tempName = user.getName();
 		final String tempEmail = user.getEmail();
 
-		users = users.stream().filter(u -> u.getName().equals(tempName))
-				.filter(u -> u.getEmail().equals(tempEmail))
-				.collect(Collectors.toCollection(ArrayList::new));
+		// System.out.println(user);
+		// System.out.println(users);
+		// users = users.stream().filter(u -> u.getName().equals(tempName))
+		// .filter(u -> u.getEmail().equals(tempEmail))
+		// .collect(Collectors.toCollection(ArrayList::new));
 
-		return users.size() > 0;
+		ArrayList<User> toReturn = new ArrayList<>();
+
+		for (User u : users) {
+			if (u.getName().equals(tempName) || u.getEmail().equals(tempEmail)) {
+				toReturn.add(u);
+			}
+		}
+		// System.out.println(users);
+		return toReturn.size() > 0;
 	}
 
 	public static boolean existsEmailPass(Connection connection, String email, String pass) throws SQLException {
