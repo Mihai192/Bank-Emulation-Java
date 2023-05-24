@@ -1208,8 +1208,12 @@ public class App {
 	public static void showHistory(Connection connection, Scanner scanner, User currentUser) throws SQLException {
 		TreeSet<Transfer> ts = TransferService.getTransfers(connection, currentUser);
 
-		for (Transfer transfer : ts)
-			System.out.println(transfer.toString());
+		if (ts.size() > 0)
+			for (Transfer transfer : ts)
+				System.out.println(transfer.toString());
+		else {
+			System.out.println("Momentan istoricul este gol.");
+		}
 	}
 
 	public static User UserMenu(Connection connection, Scanner scanner, User currentUser) throws SQLException {
