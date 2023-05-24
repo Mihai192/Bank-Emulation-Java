@@ -3,40 +3,34 @@ package src;
 
 import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
 import java.util.TreeSet;
-import java.util.Random;
 
 import java.sql.*;
 
 import src.BankAccountPackage.BankAccount;
 import src.BankAccountPackage.BankAccountService;
+import src.BeneficiaryPackage.BeneficiaryMenu;
+import src.BankAccountPackage.BankAccountMenu;
+
 import src.CardPackage.Card;
+import src.CardPackage.CardMenu;
 import src.CardPackage.CardService;
+
 import src.Transfer.Transfer;
 import src.Transfer.TransferService;
+
 import src.UserPackage.User;
 import src.UserPackage.UserService;
+
+import src.utils.RandomStringGenerator;
 
 public class App {
 
 	public static void clearScreen() {
 		// System.out.print("\033[H\033[2J");
 		// System.out.flush();
-	}
-
-	public static String generateRandomString(int length) {
-		Random random = new Random();
-		StringBuilder sb = new StringBuilder(length);
-		String characters = "abcdefghjklmnoprstzABCDEFGHJKLMNOPRSTZ123456789";
-
-		for (int i = 0; i < length; i++) {
-			int randomIndex = random.nextInt(characters.length());
-			char randomChar = characters.charAt(randomIndex);
-			sb.append(randomChar);
-		}
-
-		return sb.toString();
 	}
 
 	public static void clearBuffer(Scanner scanner) {
@@ -445,7 +439,7 @@ public class App {
 				System.out.printf("Alege valuta: ");
 				currency = scanner.nextLine();
 
-				BankAccount ba = new BankAccount(0, name, generateRandomString(6), currency);
+				BankAccount ba = new BankAccount(0, name, RandomStringGenerator.generateRandomString(6), currency);
 
 				// currentUser.addBank(ba);
 				BankAccountService.insert(connection, currentUser, ba);
@@ -1406,7 +1400,8 @@ public class App {
 			case 6: {
 				boolean operations = true;
 				while (operations) {
-					operations = bankAccountsOperations(connection, scanner, currentUser);
+					operations = BankAccountMenu.bankAccountsOperations(connection, scanner, currentUser);
+					// operations = bankAccountsOperations(connection, scanner, currentUser);
 				}
 
 				break;
@@ -1415,7 +1410,8 @@ public class App {
 			case 7: {
 				boolean operations = true;
 				while (operations) {
-					operations = cardOperations(connection, scanner, currentUser);
+					operations = CardMenu.cardOperations(connection, scanner, currentUser);
+					// operations = cardOperations(connection, scanner, currentUser);
 				}
 				break;
 			}
@@ -1424,7 +1420,8 @@ public class App {
 
 				boolean operations = true;
 				while (operations) {
-					operations = ManageBeneficiaryOperations(connection, scanner, currentUser);
+					operations = BeneficiaryMenu.ManageBeneficiaryOperations(connection, scanner, currentUser);
+					// operations = ManageBeneficiaryOperations(connection, scanner, currentUser);
 				}
 				break;
 			}
@@ -1457,15 +1454,48 @@ public class App {
 		System.out.printf("User adresa: %s\n", user.getAdresa());
 	}
 
+	public static void test(Connection connection) throws SQLException {
+		ArrayList<User> users = new ArrayList<>(8);
+
+		for (int i = 0; i < 8; ++i) {
+			String name = RandomStringGenerator.generateRandomString(4);
+			String email = RandomStringGenerator.generateRandomString(4);
+			String pass = RandomStringGenerator.generateRandomString(6);
+			String adresa = RandomStringGenerator.generateRandomString(4);
+			String cnp = RandomStringGenerator.generateRandomString(4);
+			UserService.insert(connection, new User(name, email, 0, pass, adresa, cnp));
+		}
+		ArrayList<User> getAllUsers = UserService.getUsers(connection);
+
+		System.out.println(getAllUsers);
+		for (int i = 0; i < 8; ++i)
+			users.add(getAllUsers.get(i));
+
+		for (int i = 0; i < 8; ++i)
+			System.out.println(users.get(i));
+
+		UserService.delete(connection, users.get(0));
+
+		BankAccount ba = new BankAccount(1000, "cont in lei", "9123dz", "lei");
+
+		BankAccountService.insert(connection, users.get(2), ba);
+
+		ba.setBalance(0);
+
+		BankAccountService.delete(connection, ba);
+	}
+
 	public static void main(String arg[]) {
 		Connection connection = null;
 		String url = "jdbc:mysql://localhost:3306/javaapp";
 		String user = "root";
 		String pass = "";
 		Scanner scanner = new Scanner(System.in);
+
 		try {
 			connection = DriverManager.getConnection(url, user, pass);
 
+			// test(connection);
 			User currentUser = null;
 
 			while (currentUser == null) {
@@ -1476,7 +1506,7 @@ public class App {
 			}
 
 		} catch (Exception exception) {
-			System.out.println("sunt aicii ???");
+
 			System.out.println(exception);
 		}
 	}
