@@ -418,6 +418,9 @@ public class App {
 				if (!pass.equals(repeat_pass))
 					throw new Exception("Parolele nu coincid.");
 
+				if (!currentUser.getPass().equals(pass))
+					throw new Exception("Nu ai introdus parola corecta a contului");
+
 				loop = false;
 			} catch (Exception e) {
 				error = e.getMessage();
