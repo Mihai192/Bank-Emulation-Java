@@ -7,8 +7,6 @@ import java.util.Scanner;
 import java.util.TreeSet;
 import java.util.Random;
 
-import java.util.stream.Collectors;
-
 import java.sql.*;
 
 import src.BankAccountPackage.BankAccount;
