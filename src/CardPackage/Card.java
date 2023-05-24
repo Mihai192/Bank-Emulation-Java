@@ -53,7 +53,7 @@ public class Card {
 		Card temp = (Card) obj;
 
 		if (temp.getCardNumber() == this.getCardNumber() && temp.getId() == this.getId()
-				&& temp.getCvc() == this.getCvc() && temp.getExpirationDate() == this.getExpirationDate())
+				&& temp.getCvc() == this.getCvc())
 			return true;
 		return false;
 	}

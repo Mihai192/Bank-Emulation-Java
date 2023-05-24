@@ -449,7 +449,7 @@ public class App {
 
 				BankAccount ba = new BankAccount(0, name, generateRandomString(6), currency);
 
-				currentUser.addBank(ba);
+				// currentUser.addBank(ba);
 				BankAccountService.insert(connection, currentUser, ba);
 
 				loop = false;
@@ -473,7 +473,7 @@ public class App {
 
 				System.out.println("Lista cu conturile bancare");
 
-				ArrayList<BankAccount> bankAccounts = currentUser.getBanks();
+				ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
 
 				if (bankAccounts == null || bankAccounts.size() == 0) {
 					System.out.println("Nu ai conturi bancare pe care sa le stergi.");
@@ -495,11 +495,11 @@ public class App {
 					throw new Exception(
 							String.format("Trebuie sa introduci o valoare intre 1 si %d", bankAccounts.size()));
 
-				currentUser.deleteBank(bankAccounts.get(comanda - 1));
+				// currentUser.deleteBank(bankAccounts.get(comanda - 1));
 				BankAccountService.delete(connection, bankAccounts.get(comanda - 1));
 				loop = false;
 			} catch (InputMismatchException e) {
-				error = e.getMessage();
+				error = "Trebuie sa introduci o valoare intre intervalele specificate.";
 				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
@@ -515,7 +515,7 @@ public class App {
 
 		ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
 
-		if (bankAccounts != null) {
+		if (bankAccounts != null && bankAccounts.size() > 0) {
 			for (int i = 0; i < bankAccounts.size(); ++i)
 				System.out.println((i + 1) + "." + bankAccounts.get(i));
 			System.out.printf("%d. Back\n", bankAccounts.size() + 1);
@@ -524,6 +524,21 @@ public class App {
 			System.out.println("Nu ai niciun cont bancar.");
 			System.out.printf("%d. Back\n", 1);
 			return 0;
+		}
+	}
+
+	public static void viewBankAccounts(ArrayList<BankAccount> bankAccounts) throws SQLException {
+		System.out.println("Lista cu conturile bancare");
+
+		if (bankAccounts != null && bankAccounts.size() > 0) {
+			for (int i = 0; i < bankAccounts.size(); ++i)
+				System.out.println((i + 1) + "." + bankAccounts.get(i));
+			System.out.printf("%d. Back\n", bankAccounts.size() + 1);
+			// return bankAccounts.size();
+		} else {
+			System.out.println("Nu ai niciun cont bancar.");
+			System.out.printf("%d. Back\n", 1);
+			// return 0;
 		}
 	}
 
@@ -549,11 +564,21 @@ public class App {
 				if (suma < 0)
 					throw new Exception("Suma trebuie sa fie pozitiva");
 
-				currentUser.addMoneyToBank(comanda - 1, suma);
-				BankAccountService.update(connection, currentUser.getBanks().get(comanda - 1));
+				// currentUser.addMoneyToBank(comanda - 1, suma);
+				ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
+
+				if (comanda == bankAccounts.size() + 1)
+					return;
+
+				if (comanda < 1 || comanda > bankAccounts.size())
+					throw new Exception(String.format("Trebuie sa introduci o valoare intre intervalele 1 si %d",
+							bankAccounts.size()));
+
+				bankAccounts.get(comanda - 1).setBalance(bankAccounts.get(comanda - 1).getBalance() + suma);
+				BankAccountService.update(connection, bankAccounts.get(comanda - 1));
 				loop = false;
 			} catch (InputMismatchException e) {
-				error = e.getMessage();
+				error = "Trebuie sa introduci un numar intreg";
 				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
@@ -577,11 +602,13 @@ public class App {
 				System.out.println(error);
 
 				viewBankAccounts(connection, scanner, currentUser);
-				System.out.println("4. Back");
+
 				System.out.println("Alege contul bancar din care vrei sa retragi suma: ");
 				comanda = scanner.nextInt();
 
-				if (comanda == 4)
+				ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
+
+				if (comanda == bankAccounts.size() + 1)
 					return;
 
 				System.out.println("Introdu suma dorita de retras: ");
@@ -590,11 +617,17 @@ public class App {
 				if (suma < 0)
 					throw new Exception("Suma trebuie sa fie pozitiva");
 
-				BankAccount ba = currentUser.getBanks().get(comanda - 1);
+				BankAccount ba = bankAccounts.get(comanda - 1);
 
 				if (BankAccountService.getCard(connection, ba) != null) {
-					System.out.println("Here");
-					currentUser.withDrawMoneyFromBank(comanda - 1, suma);
+					// System.out.println("Here");
+					// currentUser.withDrawMoneyFromBank(comanda - 1, suma);
+
+					if (ba.getBalance() - suma < 0)
+						throw new Exception("Suma este mai mare decat balanta contului");
+
+					ba.setBalance(ba.getBalance() - suma);
+
 					BankAccountService.update(connection, ba);
 				} else
 					throw new Exception("Contul bancar selectat nu are un card atasat");
@@ -626,16 +659,24 @@ public class App {
 				ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
 				ArrayList<Card> cards = UserService.getCards(connection, currentUser);
 
-				if (bankAccounts == null) {
+				ArrayList<BankAccount> listToConsider = new ArrayList<BankAccount>();
+
+				for (BankAccount ba : bankAccounts)
+					if (BankAccountService.getCard(connection, ba) == null)
+						listToConsider.add(ba);
+
+				bankAccounts = listToConsider;
+
+				if (bankAccounts == null || bankAccounts.size() == 0) {
 					System.out.println("Nu ai vreun cont bancar ca sa atasezi card-uri");
 					return;
 				}
-				viewBankAccounts(connection, scanner, currentUser);
+				viewBankAccounts(bankAccounts);
 
-				System.out.println("Alege contul bancar in care vrei sa depui suma: ");
+				System.out.println("Alege contul bancar: ");
 				comanda1 = scanner.nextInt();
 
-				if (comanda1 == 1 && bankAccounts == null)
+				if (bankAccounts == null || bankAccounts.size() == 0)
 					return;
 
 				if (comanda1 == bankAccounts.size() + 1)
@@ -681,15 +722,25 @@ public class App {
 		int comanda = 0;
 		String error = "";
 		boolean loop = true;
+		ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
 
 		while (loop) {
 			try {
 				bankAccountsOperationsMenu(error, currentUser);
 				comanda = scanner.nextInt();
+
+				if (comanda == 7)
+					return false;
+
+				if (comanda < 1 || (bankAccounts != null && comanda > bankAccounts.size()))
+					throw new InputMismatchException();
 				loop = false;
+
+			} catch (InputMismatchException e) {
+				error = "Input-ul trebuie sa fie un numar intreg si intre valorile specificate.";
+				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
-				scanner.nextLine();
 			}
 		}
 
@@ -705,7 +756,24 @@ public class App {
 			}
 
 			case 3: {
-				viewBankAccounts(connection, scanner, currentUser);
+				// viewBankAccounts(connection, scanner, currentUser);
+				// System.out.println("Press 1 or any key to continue...");
+				// scanner.nextLine();
+
+				System.out.println("Lista cu conturile bancare");
+
+				// ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection,
+				// currentUser);
+
+				if (bankAccounts != null && bankAccounts.size() > 0) {
+					for (int i = 0; i < bankAccounts.size(); ++i)
+						System.out.println((i + 1) + "." + bankAccounts.get(i));
+					// System.out.printf("%d. Back\n", bankAccounts.size() + 1);
+
+				} else {
+					System.out.println("Nu ai niciun cont bancar.");
+				}
+
 				return true;
 			}
 
@@ -725,7 +793,11 @@ public class App {
 			}
 
 			case 7: {
-				loop = false;
+				// loop = false;
+				break;
+			}
+			default: {
+				return true;
 			}
 		}
 
@@ -739,7 +811,7 @@ public class App {
 		String cardNumber;
 		int cvc;
 
-		scanner.nextLine();
+		// scanner.nextLine();
 		while (loop) {
 			try {
 				System.out.println("Adauga card");
@@ -747,19 +819,28 @@ public class App {
 				System.out.printf("Scrie card numar: ");
 
 				cardNumber = scanner.nextLine();
+				scanner.nextLine();
+
 				System.out.printf("Scrie cvc: ");
 				cvc = scanner.nextInt();
 
 				ArrayList<Card> cards = new ArrayList<Card>();
 
 				Card new_card = new Card(cardNumber, cvc);
+
+				for (Card c : cards)
+					if (c.equals(new_card))
+						throw new Exception("acest card este deja folosit");
+
 				CardService.insert(connection, currentUser, new_card);
 
 				currentUser.addCard(new_card);
 
 				loop = false;
 
-				scanner.nextLine();
+			} catch (InputMismatchException e) {
+				error = "CVC trebuie sa fie un numar";
+
 			} catch (Exception e) {
 				error = e.getMessage();
 			}
@@ -783,10 +864,18 @@ public class App {
 				ArrayList<Card> cards = UserService.getCards(connection, currentUser);
 				ArrayList<BankAccount> bankAccounts = UserService.getBankAccounts(connection, currentUser);
 
+				if (cards == null || cards.size() == 0) {
+					System.out.println("Nu ai niciun card adaugat");
+					return;
+				}
+
 				System.out.printf("Alege un card intre 1 si %d:", cards.size());
 				comanda = scanner.nextInt();
 
-				if (comanda < 1 || comanda > cards.size())
+				if (comanda == cards.size() + 1)
+					return;
+
+				if (comanda < 1 || (cards != null && comanda > cards.size()))
 					throw new Exception(
 							String.format("Trebuie sa introduci o valoare intre 1 si %d", cards.size()));
 
@@ -794,8 +883,8 @@ public class App {
 					if (ba.getCard() != null && ba.getCard().equals(cards.get(comanda - 1)))
 						ba.setCard(null);
 
-				currentUser.setCards(cards);
-				currentUser.deleteCard(cards.get(comanda - 1));
+				// currentUser.setCards(cards);
+				// currentUser.deleteCard(cards.get(comanda - 1));
 				CardService.delete(connection, cards.get(comanda - 1));
 
 				loop = false;
@@ -829,15 +918,27 @@ public class App {
 		int comanda = 0;
 		String error = "";
 		boolean loop = true;
-
+		ArrayList<Card> cards = UserService.getCards(connection, currentUser);
 		while (loop) {
 			try {
 				cardOperationsMenu(error, currentUser);
 				comanda = scanner.nextInt();
+
+				if (comanda < 1 || comanda > 4)
+					throw new InputMismatchException();
+
+				if (comanda == 4)
+					return false;
+
 				loop = false;
-			} catch (Exception e) {
-				error = e.getMessage();
+			} catch (InputMismatchException e) {
+				error = "Input-ul trebuie sa fie un numar intreg intre 1 si 4.";
 				scanner.nextLine();
+			}
+
+			catch (Exception e) {
+				error = e.getMessage();
+
 			}
 		}
 
@@ -853,7 +954,19 @@ public class App {
 			}
 
 			case 3: {
-				viewCards(connection, scanner, currentUser);
+				// viewCards(connection, scanner, currentUser);
+				System.out.println("Lista cu card-urile");
+				// ArrayList<Card> cards = UserService.getCards(connection, currentUser);
+
+				if (cards != null && cards.size() > 0) {
+					for (int i = 0; i < cards.size(); ++i)
+						System.out.println((i + 1) + "." + cards.get(i));
+					System.out.printf("%d. Back\n", cards.size() + 1);
+				} else {
+					System.out.println("Nu ai niciun card adaugat");
+					// System.out.printf("%d. Back\n", 1);
+				}
+
 				return true;
 			}
 
@@ -861,6 +974,9 @@ public class App {
 
 				break;
 			}
+
+			default:
+				return true;
 		}
 
 		return false;
@@ -968,12 +1084,20 @@ public class App {
 			try {
 				ManageBeneficiaryOperationsMenu(error, currentUser);
 				comanda = scanner.nextInt();
+
+				if (comanda < 1 || comanda > 4)
+					throw new InputMismatchException();
+
+				if (comanda == 4)
+					return false;
+
 				loop = false;
 			} catch (InputMismatchException e) {
-				error = e.getMessage();
+				error = "Input-ul trebuie sa fie un numar intreg intre 1 si 4.";
 				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
+
 			}
 		}
 
@@ -1225,10 +1349,16 @@ public class App {
 			try {
 				displayUserMenu(error, currentUser);
 				comanda = scanner.nextInt();
+
+				if (comanda < 1 || comanda > 11)
+					throw new InputMismatchException();
+
 				loop = false;
+			} catch (InputMismatchException e) {
+				error = "Input-ul trebuie sa fie o valoare intreaga intre 1 si 11";
+				scanner.nextLine();
 			} catch (Exception e) {
 				error = e.getMessage();
-				scanner.nextLine();
 			}
 		}
 
