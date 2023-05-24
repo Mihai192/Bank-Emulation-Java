@@ -212,11 +212,19 @@ public class App {
 				System.out.printf("Repeta noua parola: ");
 				repeat_new_pass = scanner.nextLine();
 
+				// ArrayList<User> users = UserService.getUsers(connection);
+
 				if (!pass.equals(repeat_pass))
 					throw new Exception("Parolele nu coincid.");
 
 				if (!new_pass.equals(repeat_new_pass))
-					throw new Exception("Parolelel noi nu coincid");
+					throw new Exception("Parolele noi nu coincid");
+
+				if (repeat_pass.length() > 60)
+					throw new Exception("Parola noua trebuie sa fie mai scurta de 60 de caractere");
+
+				if (!currentUser.getPass().equals(pass))
+					throw new Exception("Nu ai introdus parola corecta a contului");
 
 				currentUser.setPass(new_pass);
 
